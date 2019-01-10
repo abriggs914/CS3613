@@ -36,11 +36,3 @@
 (test (area cir) 706.8583470577034)
 
 
-(define (hello n)
-  (+ n 4))
-
-
-(define (pow acc b e)
-  (cond
-    [(zero? e) acc]
-    [else (pow (* acc b) b (- e 1))]))
