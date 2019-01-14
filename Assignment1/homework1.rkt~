@@ -48,11 +48,6 @@ Avery Briggs
 
 ;; Testing
 
-;; Since we are type-checking our inputs, there will simply
-;; be an error message displayed when a non-compatible typed
-;; variable is encountered. i.e. calling (define rec (Rectangle 4 5))
-;; will throw an error.
-
 ;; Question 1
 (define tri (Triangle 10 12))
 (define squ (Square 12))
@@ -69,4 +64,3 @@ Avery Briggs
 (test (tern->num (list 1 0 2 1)) 46)
 (test (tern->num (list 1 2 0 1)) 34)
 (test (tern->num (list 1 2 0 1 2 1)) 439)
-(test (tern->num (list 2 2 0 1)) 35)
