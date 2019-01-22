@@ -1,0 +1,55 @@
+#lang plait
+
+; Question 1
+;(('a -> String) (Listof 'a) -> String)
+(define (comma-join func lst)
+  (cond
+    [(empty? lst) '()]
+    [else (local
+            [(define (helper acc)
+               (add1 acc))])]))
+
+#|
+;Question 2
+(define-type JPair
+  [jpair (key : String) (val : JSON)])
+
+(define-type JSON
+;; ...
+)
+
+; Question 3
+
+
+;Question 4
+|#
+
+; Testing
+
+; Question 1
+(test (comma-join to-string (list 1 2 3)) "1,2,3")
+#|
+; Question 2
+(test (jstring? (jstring "hello"))  #t)
+(test (jarray? (jarray (list (jboolean true)
+                           (jnumber 10))))  #t)
+(test (jdict? (jdict (list (jpair "happy"
+                                 (jboolean true))
+                          (jpair "cookies"
+                                 (jnumber 10)))))  #t)
+(test (jpair->string (jpair "Alice" (jstring "Cryptologist")))
+       "\"Alice\":\"Cryptologist\"")
+
+(test (json->string
+       (jarray (list (jnumber 5)
+                     (jnumber 10))))  "[5,10]")
+
+; Question 3
+(test (json->string
+       (jdict (list (jpair "happy"
+                           (jboolean true))
+                    (jpair "crazy"
+                           (jboolean false)))))
+                           "{\"happy\":true,\"crazy\":false}")
+
+|#
