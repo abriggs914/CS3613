@@ -1,6 +1,15 @@
 #lang plait
 
+#|
+  CS3613 Assignment2
+  Jan.25/19
+  Avery Briggs
+  3471065
+|#
+
+
 ; Question 1
+
 ;(('a -> String) (Listof 'a) -> String)
 (define (comma-join func lst)
   (cond
@@ -16,6 +25,7 @@
 
 
 ;Question 2
+
 (define-type JPair
   [jpair (key : String) (val : JSON)])
 
@@ -30,29 +40,25 @@
 
 ; Question 3
 
-;(define (jpair->string pair)
-;  (....))
-
 (define (json->string val)
   (type-case JSON val
     [(json key jpair) (string-append (string-append 
-                      (json->string key) ":") 
-                      (jpair->string jpair))]
+                                      (to-string key) ":") 
+                                     (jpair->string jpair))]
     [(jstring txt) (string-append (string-append 
-                    "\"" txt) "\"")]
+                                   "\"" txt) "\"")]
     [(jarray l) (string-append (string-append 
-                 "[" (comma-join to-string l)) "]")]
-    [(jboolean b)  (if b "true" "false")]
-    [(jnumber n) (to-string n)]
-    [(jdict l) (string-append (string-append 
-                "{" (comma-join to-string l))  "}")]))
+                                "[" (comma-join json->string l)) "]")]
+    [(jboolean bool) (if bool "true" "false")]
+    [(jnumber num) (to-string num)]
+    [(jdict dict) (string-append (string-append 
+                                  "{" (comma-join jpair->string dict)) "}")]))
 
 (define (jpair->string pair)
   (type-case JPair pair
     [(jpair key val) (string-append (string-append 
-                      (json->string key) ":") 
-                      (json->string val))]))
-
+                                     (to-string key) ":") 
+                                    (json->string val))]))
 
 ;Question 4
 (define minutes-spent 30)
@@ -61,6 +67,7 @@
 ; Testing
 
 ; Question 1
+
 ; Numbers
 (test (comma-join to-string (list 1 2 3)) "1,2,3")
 ; Empty list returns empty string
@@ -69,35 +76,59 @@
 (test (comma-join to-string (list "Hello" "World")) "\"Hello\",\"World\"")
 ; symbols to strings
 (test (comma-join symbol->string (list 'Hello 'World)) "Hello,World")
-
-;; write a lambda test string-append
+; lambda test string-append
+(test (comma-join (λ (x) (string-append "Hello " x)) (list "Bob" "Sue")) "Hello Bob,Hello Sue")
 
 
 ; Question 2
+
+(test (json? (json "thing" (jpair "pair" (jnumber 1000))))  #t)
+
 (test (jstring? (jstring "hello"))  #t)
 
 (test (jarray? (jarray (list (jboolean #t)
-                           (jnumber 10))))  #t)
+                             (jnumber 10))))  #t)
+
+(test (jboolean? (jboolean #t)) #t)
+
+(test (jnumber? (jboolean #f)) #f)
 
 (test (jdict? (jdict (list (jpair "happy"
-                                 (jboolean #t))
-                          (jpair "cookies"
-                                 (jnumber 10)))))  #t)
+                                  (jboolean #t))
+                           (jpair "cookies"
+                                  (jnumber 10)))))  #t)
 
 ; Question 3
 
 (test (jpair->string (jpair "Alice" (jstring "Cryptologist")))
-       "\"Alice\":\"Cryptologist\"")
-#|
+      "\"Alice\":\"Cryptologist\"")
+
 (test (json->string
        (jarray (list (jnumber 5)
-                     (jnumber 10))))  "[5,10]")
+                     (jnumber 10))))
+      "[5,10]")
+
+(test (json->string
+       (jarray (list))) "[]")
 
 (test (json->string
        (jdict (list (jpair "happy"
                            (jboolean #t))
                     (jpair "crazy"
                            (jboolean #f)))))
-                           "{\"happy\":true,\"crazy\":false}")
+      "{\"happy\":true,\"crazy\":false}")
 
-|#
+(test (json->string
+       (jdict (list (jpair "happy"
+                           (jboolean #t))
+                    (jpair "crazy"
+                           (jboolean #f))
+                    (jpair "hungry"
+                           (jboolean #t)))))
+      "{\"happy\":true,\"crazy\":false,\"hungry\":true}")
+
+(test (json->string (json "thing" (jpair "pair" (jnumber 1000))))
+      "\"thing\":\"pair\":1000")
+
+(test (json->string (jdict (list (jpair "" (jarray (list))))))
+      "{\"\":[]}")
