@@ -132,15 +132,3 @@
 
 (test (json->string (jdict (list (jpair "" (jarray (list))))))
       "{\"\":[]}")
-
-(define b (jpair "banana" (jboolean #t)))
-(define a (jpair "apple" (jboolean #t)))
-(define c (jpair "coconut" (jboolean #f)))
-(define dict (jdict (list a b c)))
-
-(test (jpair? a) #t)
-(test (jpair->string a)
-      "\"apple\":true")
-
-(test (json->string dict)
-      "{\"apple\":true,\"banana\":true,\"coconut\":false}")
