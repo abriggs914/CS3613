@@ -61,7 +61,7 @@
                                     (json->string val))]))
 
 ;Question 4
-(define minutes-spent 30)
+(define minutes-spent 45)
 
 
 ; Testing
