@@ -20,7 +20,8 @@
           (cond
             [(empty? lst) acc]
             [(= 1 (length lst)) (helper (string-append acc (func (first lst))) func (rest lst))]
-            [else (helper (string-append (string-append acc (func (first lst))) ",") func (rest lst))]))]
+            [else (helper
+                   (string-append (string-append acc (func (first lst))) ",") func (rest lst))]))]
        (helper "" func lst))]))
 
 
