@@ -1,5 +1,12 @@
 #lang plait
 
+#|
+ CS3613 Homework 4
+ Feb.8/19
+ Avery Briggs
+ 3471065
+|#
+
 (define-type ArgPair
   [argpair (arg : Symbol) (expr : W*AE)]) ;(Symbol W*AE -> ArgPair)
 
@@ -91,17 +98,17 @@
                             (if (eq? arg from) bound-body
                                 (subst bound-body from to))))]))]))
 #|
-[(With* arglist bound-body) (With* (rest arglist)
-                                       (With
-                                        (type-case ArgPair (first arglist)
-                                          [(argpair arg expr) arg])
-                                        (subst
-                                         (type-case ArgPair (first arglist)
-                                          [(argpair arg expr) expr])
-                                         (if (eq? (type-case ArgPair (first arglist)
-                                                    [(argpair arg expr) arg]) from)
-                     bound-body
-                     (subst bound-body from to)) to) bound-body))]
+[(With* arglist bound-body)
+     (if (empty? arglist) bound-body 
+     (type-case ArgPair (first arglist)
+       [(argpair arg expr) ; arg = symbol, expr = W*AE
+        (With* (map (lambda (arglistpair)
+                      (type-case ArgPair (arglistpair)
+                        [(argpair arg innerexpr) (argpair arg (subst expr arg bound-body))])) (rest arglist))
+               (With arg 
+                     (subst expr from to)
+                            (if (eq? arg from) bound-body
+                                (subst bound-body from to))))]))]
 |#
 
 #|(list (parse-args (map (lambda (id) (With* id
@@ -138,11 +145,12 @@
                (type-case ArgPair (first arglist)
                  [(argpair arg expr)
                   (With* (rest arglist)
-                         (subst bound-body arg expr))])))]))
-
-(trace eval)
+                         (Num (eval (subst bound-body arg expr))))])))]))
+;(trace subst)
+;(trace eval)
 ;; tests
 (module+ test
+  #|
   (test (run `5) 5)
   (test (run `{+ 5 5}) 10)
   (test (run `{* 5 5}) 25)
@@ -158,7 +166,7 @@
   (test (run `{with {x 5} {+ x {with {y 3} x}}}) 10)
   (test (run `{with {x 5} {with {y x} y}}) 5)
   (test (run `{with {x 5} {with {x x} x}}) 5)
-  (test/exn (run `{with {x 1} y}) "free identifier")
+  (test/exn (run `{with {x 1} y}) "free identifier")|#
   (test (run `{with* {{x 1} {y 2}} {+ x y}}) 3)
   (test (run `{with* {{x 5}
                       {y {- x 3}}} {+ y y}})  4)
@@ -167,6 +175,7 @@
 
 (define minutes-spent 180)
 
+#|
 ;;
 (define a (With* (list (argpair 'x (Num 1)) (argpair 'y (Num 2))) (Add (Id 'x) (Id 'y)))) ; => W*AE
 (define b (map (λ (item) (symbol->s-exp item)) (list 'x 'y))) ; => listof s-exp
@@ -176,4 +185,6 @@
 (define f (With* d a)) ; => W*AE
 (define g (subst f (first c) f)) ; => W*AE
 (define h (eval g)) ; => 3
+(define i (run `{with* {{x 5} {y {- x 3}}} {+ y y}})) ; => 4
 ;;
+|#
