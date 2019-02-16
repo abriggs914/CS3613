@@ -90,13 +90,21 @@
 (define (run sx)
   (eval (parse-sx sx) (EmptyEnv)))
 
+
+(define (runC sx)
+  (evalC (preprocess (parse-sx sx) (envR (list (EmptyEnv)))) (list (EmptyEnv))))
+
 (test (run `{with {x {+ 5 5}} {+ x x}}) 20)
 (test (run `{with {x {+ 5 5}} {with {y {- x 3}} {+ y y}}}) 14)
 (test (run `{with {x {- 5 1}} {with {y {- x 3}} {* x {/ y y}}}}) 4)
-(test/exn (run `{with {x {- 5 1}} {with {x {- x 3}} {* y {/ y y}}}}) "lookup: no binding for 'y")
-(test/exn (run `{with {x {+ 1 y}} {+ y y}}) "lookup: no binding for 'y")
-(test/exn (run `{with {x {+ 1 y}} {& y y}}) "parse-sx: parse error: `(& y y)")
-(test/exn (run `{with {x {+ 1 y}} {/ y y} {* 4 4}}) "parse-sx: parse error: `(with (x (+ 1 y)) (/ y y) (* 4 4))")
+(test/exn (run `{with {x {- 5 1}} {with {x {- x 3}} {* y {/ y y}}}})
+          "lookup: no binding for 'y")
+(test/exn (run `{with {x {+ 1 y}} {+ y y}})
+          "lookup: no binding for 'y")
+(test/exn (run `{with {x {+ 1 y}} {& y y}})
+          "parse-sx: parse error: `(& y y)")
+(test/exn (run `{with {x {+ 1 y}} {/ y y} {* 4 4}})
+          "parse-sx: parse error: `(with (x (+ 1 y)) (/ y y) (* 4 4))")
 
 ;('a (Listof 'b) -> Number)
 (define (de-lookup sym lst)
@@ -165,22 +173,14 @@
 (test (preprocess (Div (Id 'x) (Id 'y)) test-env) (CDiv (CRef 0) (CRef 2)))
 (test (preprocess (Mul (Id 'x) (Id 'y)) test-env) (CMul (CRef 0) (CRef 2)))
 (test (preprocess (With 'x (Id 'y) (Id 'x)) test-env) (CWith (CRef 2) (CRef 0)))
-(test (preprocess (Sub (With 'x (Id 'y) (Id 'x)) (With 'y (Id 'x) (Id 'y))) test-env) (CSub (CWith (CRef 2) (CRef 0)) (CWith (CRef 0) (CRef 0))))
+(test (preprocess (Sub (With 'x (Id 'y) (Id 'x)) (With 'y (Id 'x) (Id 'y))) test-env)
+      (CSub (CWith (CRef 2) (CRef 0)) (CWith (CRef 0) (CRef 0))))
 
 ;('a (Listof ENV) -> (Listof ENV))
 (define (ExtendDB num env)
-  (cons
-   [(cons? (has-type env : ENV))
-    (cons num env)]
-   [(cons? (has-type env : (Listof Number)))
-    (cons num (list))]))
-    ;(type-case ENV (first env)
-    ;  [(EmptyEnv) (error 'ExtendDB "error")]
-    ;  [(Extend n v r) (cons num (list))])))
   ;(Symbol (Listof ENV) -> (Listof ENV))
-  ;(de-extend2 (string->symbol (to-string num)) env)) ;(s-exp->symbol (number->s-exp num))
+  (de-extend2 (string->symbol (to-string num)) env)) ;(s-exp->symbol (number->s-exp num))
 
-;(CORE (Listof Number) -> Number)
 (define (evalC expr env)
   (type-case CORE expr
     [(CNum n) n]
@@ -188,9 +188,7 @@
     [(CSub l r) (- (evalC l env) (evalC r env))]
     [(CMul l r) (* (evalC l env) (evalC r env))]
     [(CDiv l r) (/ (evalC l env) (evalC r env))]
-    [(CWith named-expr bound-body) (list-ref env (evalC named-expr env))]
-     ;(evalC bound-body
-     ;      (ExtendDB (evalC named-expr env) env))]
+    [(CWith named-expr bound-body) 5]
      #|(local
        [(define (helper lst sum)
            (cond
@@ -210,9 +208,9 @@
   [CRef (index : Number)])
 |#
 (define test-run-env
-   (ExtendDB 1 (ExtendDB 2 (ExtendDB 3 (ExtendDB 4 (EmptyEnv))))))
-(test (evalC (CAdd (CRef 0) (CRef 1))  test-run-env) 3)
-(test (evalC (CWith (CRef 3) (CRef 0)) test-run-env) 4)
-(test (evalC (CRef 0) test-run-env) 1)
+   (ExtendDB 1 (ExtendDB 2 (ExtendDB 3 (ExtendDB 4 (list (EmptyEnv)))))))
+;(test (evalC (CAdd (CRef 0) (CRef 1))  test-run-env) 3)
+;(test (evalC (CWith (CRef 3) (CRef 0)) test-run-env) 4)
+;(test (evalC (CRef 0) test-run-env) 1)
 
 (define minutes-spent 240)
