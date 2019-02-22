@@ -91,8 +91,8 @@
   (eval (parse-sx sx) (EmptyEnv)))
 
 
-;(define (runC sx)
-;  (evalC (preprocess (parse-sx sx) (envR (list (EmptyEnv)))) (list (EmptyEnv))))
+(define (runC sx)
+  (evalC (preprocess (parse-sx sx) (envR (list (EmptyEnv)))) (list (EmptyEnv))))
 
 (test (run `{with {x {+ 5 5}} {+ x x}}) 20)
 (test (run `{with {x {+ 5 5}} {with {y {- x 3}} {+ y y}}}) 14)
@@ -147,26 +147,6 @@
 (test (de-lookup 'x (de-extend 'x (de-extend 'x (de-empty-env)))) 0)
 (test (de-lookup 'y (de-extend 'x (de-extend 'x (de-extend 'y (de-empty-env))))) 2)
 
-(module+ test
-  (test/exn (de-lookup 'x (de-empty-env))  "undefined identifier")
-  (test (de-lookup 'x (de-extend 'x (de-empty-env))) 0)
-  (test (de-lookup 'x (de-extend 'y (de-extend 'x (de-empty-env)))) 1)
-  (test (de-lookup 'x (de-extend 'x (de-extend 'x (de-empty-env)))) 0)
-  (test (de-lookup
-         'y
-         (de-extend 'x
-                    (de-extend 'x
-                               (de-extend 'y (de-empty-env))))) 2)
-  (test (de-lookup
-         'z
-         (de-extend 'x (de-extend 'y
-                                  (de-extend 'z (de-empty-env))))) 2)
-
-  (test (de-lookup
-         'z
-         (de-extend 'x (de-extend 'z
-                                  (de-extend 'y (de-empty-env))))) 1))
-
 
 (define test-env (envR (de-extend 'x (de-extend 'z (de-extend 'y (de-empty-env))))))
 
@@ -201,7 +181,7 @@
   ;(Symbol (Listof ENV) -> (Listof ENV))
   (de-extend2 (string->symbol (to-string num)) env)) ;(s-exp->symbol (number->s-exp num))
 
-#|(define (evalC expr env)
+(define (evalC expr env)
   (type-case CORE expr
     [(CNum n) n]
     [(CAdd l r) (+ (evalC l env) (evalC r env))]
@@ -209,14 +189,14 @@
     [(CMul l r) (* (evalC l env) (evalC r env))]
     [(CDiv l r) (/ (evalC l env) (evalC r env))]
     [(CWith named-expr bound-body) 5]
-     (local
+     #|(local
        [(define (helper lst sum)
            (cond
              [(empty? lst) sum]
              [else (helper (first lst) (+ sum (list-ref env (first lst))))]))]
       (helper (map (lambda (x) (evalC bound-body
-           (list-ref env x))) env) 0))]
-    [(CRef name) (list-ref env name)]))|#
+           (list-ref env x))) env) 0))]|#
+    [(CRef name) (list-ref env name)]))
 #|
 (define-type CORE
   [CNum  (n : Number)]
@@ -227,8 +207,8 @@
   [CWith (l : CORE) (r : CORE)]
   [CRef (index : Number)])
 |#
-;(define test-run-env
-;   (ExtendDB 1 (ExtendDB 2 (ExtendDB 3 (ExtendDB 4 (list (EmptyEnv)))))))
+(define test-run-env
+   (ExtendDB 1 (ExtendDB 2 (ExtendDB 3 (ExtendDB 4 (list (EmptyEnv)))))))
 ;(test (evalC (CAdd (CRef 0) (CRef 1))  test-run-env) 3)
 ;(test (evalC (CWith (CRef 3) (CRef 0)) test-run-env) 4)
 ;(test (evalC (CRef 0) test-run-env) 1)

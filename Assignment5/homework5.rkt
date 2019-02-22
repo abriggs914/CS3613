@@ -153,9 +153,9 @@
        [(Mul l r) (CMul (preprocess l env) (preprocess r env))]
        [(Div l r) (CDiv (preprocess l env) (preprocess r env))]
        [(With bound-id named-expr bound-body)
-        (let* ([newEnv (envR (de-extend bound-id exprENV))])
-                 (CWith (preprocess named-expr env)
-               (preprocess bound-body newEnv)))]
+          (CWith
+           (preprocess named-expr env)
+           (preprocess bound-body (de-extend bound-id env)))]
        [(Id name) (CRef (de-lookup name exprENV))])]));(lookup name env)]))
 
 
