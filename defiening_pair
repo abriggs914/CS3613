@@ -1,0 +1,21 @@
+#lang plait
+
+(define-type tuple
+  [pair (l : Number) (r : Number)])
+
+(define (e p op)
+  (type-case tuple p
+    [(pair l r)
+     (let* ([x (to-string op)])      
+       (cond
+         [(equal? x "#<procedure:+>") (+ l r)]
+         [(equal? x "#<procedure:*>") (* l r)]
+         [(equal? x "#<procedure:/>") (/ l r)]
+         [(equal? x "#<procedure:->") (- l r)]
+         [else (error 'e "Invalid")]))]))
+
+(test (e (pair 1 3) +) 4)
+(test (e (pair 1 3) -) -2)
+(test (e (pair 2 3) *) 6)
+(test (e (pair 12 2) /) 6)
+(test/exn (e (pair 2 3) '7) "e: Invalid")

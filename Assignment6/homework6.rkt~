@@ -1,13 +1,6 @@
 #lang plait
 
 #|
- CS3613 Homework 6
- Mar.1/19
- Avery Briggs
- 3471065
-|#
-
-#|
 flang: NUMBER
 | { + flang flang }
 | { - flang flang }
