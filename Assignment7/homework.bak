@@ -1,0 +1,12 @@
+#lang plait #:untyped
+
+(define (make-tree left value right)
+  (lambda (key)
+  ....))
+
+(define empty-tree empty)
+(define (empty-tree? val) (if (empty? val) #t #f))
+
+(test ((make-tree empty-tree 1 empty-tree) 'getLeft) empty-tree)
+(test ((make-tree empty-tree 2 empty-tree) 'getRight) empty-tree)
+(test ((make-tree empty-tree 3 empty-tree) 'getValue) 3)
