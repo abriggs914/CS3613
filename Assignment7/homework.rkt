@@ -83,17 +83,18 @@
 
 (define (lift fun)
   (lambda (x)
-    (local
+           (local
       [(define (helper fun l m r)
          (let
-             ([getL (l 'getLeft)]
-              [getR (r 'getRight)])
+             ([getL ((l 'getLeft) 'getValue)]
+              [getR ((r 'getRight) 'getValue)])
          (cond
-           [(equal? empty-tree getL) x]
-           [(equal? empty-tree getR) x]
-           [(equal? empty-tree m) x]
-           [else (helper fun (fun getL) m (fun getR))])))]
-      (helper fun (x 'getLeft) (fun (x 'getValue)) (x 'getRight)))))
+           [(number? m) (fun m)]
+           [(equal? empty-tree getL) getL]
+           [(equal? empty-tree getR) getR]
+           [(equal? empty-tree m) m]
+           [else (helper fun (l getL) m (r getR))])))]
+      (helper fun (x 'getLeft) (x) (x)))))
 
 (define test-tree-1
   (make-tree (make-leaf 1) 2 (make-leaf 3)))
@@ -114,4 +115,4 @@
 ;(test (tree-sum ((compose tree-neg tree-add1) test-tree-1)) -9)
 ;(test (tree-sum ((compose tree-add1 tree-neg) test-tree-1)) -3)
 
-(define minutes-spent 120)
+(define minutes-spent 180)
