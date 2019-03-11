@@ -1,0 +1,23 @@
+#lang typed/racket ; typed/racket/no-check
+
+; this looks for a matching pair pf parens
+(define-type-alias BinOp (Any Any -> Any))
+
+(define-type-alias _Pair (BinOp -> Any))
+
+(define-type-alias Thing (U Number Symbol _Pair))
+
+(: _cons : (Thing Thing -> _Pair))
+(define (_cons x y)
+  (lambda ([s : BinOp])
+    (s x y)))
+
+(define (_first [x : _Pair]) (x (lambda (x y) x)))
+(define (_rest [x : _Pair]) (x (lambda (x y) y)))
+(module+ test
+  (require typed/rackunit)
+  (define a (_cons 1 'alpha))
+  (define b (_cons 'beta 4))
+  (check-equal? (_first a) 1 "furst")
+  (check-equal? (_rest b) 4 "rust")
+  (check-equal? (_rest a) 'alpha))

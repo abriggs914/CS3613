@@ -1,0 +1,14 @@
+#|
+Lambda Lists
+|#
+
+#lang plait #:untyped
+(define (_cons x y) (lambda (s) (s x y)))
+(define (_first x) (x (lambda (x y) x)))
+(define (_rest x) (x (lambda (x y) y)))
+(define a (_cons 1 'alpha))
+(define b (_cons 'beta 4))
+;
+(test (_first a) 1)
+(test (_rest b) 4)
+(test (_rest a) 'alpha)

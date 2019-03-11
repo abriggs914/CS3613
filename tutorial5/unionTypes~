@@ -1,0 +1,29 @@
+#lang typed/racket
+
+; (test) form is not available in typed/racket
+
+;#lang plait #:untyped
+
+; union types
+(let ([a-number 37])
+    (if (even? a-number)
+        'yes
+        'no))
+
+
+#|(define (fun arg)
+    (if arg
+        'foo
+        'bar))|#
+
+(define (bar)
+  (fun "hello"))
+
+; This can return a symbol or a string
+(: fun : (Any -> (U Symbol String)))
+(define (fun arg)
+    (if arg
+        'foo
+        "bar"))
+(fun 1)  ; 'foo  (symbol)
+(fun #f) ; "bar" (string) 

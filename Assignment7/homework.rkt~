@@ -9,8 +9,7 @@
 
 (define (make-tree left value right)
   (lambda (key)
-    (let* ([lst (list (symbol->s-exp key))]
-           [key (list-ref lst 0)])
+    (let ([key (list-ref (list (symbol->s-exp key)) 0)])
       (cond
         [(s-exp-match? key (list-ref (list (symbol->s-exp 'getLeft)) 0)) left]
         [(s-exp-match? key (list-ref (list (symbol->s-exp 'getValue)) 0)) value]
@@ -40,60 +39,15 @@
     [(procedure? tree) tree]
     [else (error 'non-empty "expected non-empty tree")]))
 
-(define (right-child tree)
-  (cond
-    [(number? tree) tree]
-    [(empty-tree? tree) empty-tree]
-    [(non-empty tree) 
-     (if (number? (tree 'getRight)) 
-         (error 'right-child "bad tree") 
-         (tree 'getRight))]
-    [else (error 'right-child "bad tree")]))
-
 (define (left-child tree)
   (cond
     [(number? tree) tree]
     [(empty-tree? tree) empty-tree]
-    [(non-empty tree) 
-     (if (number? (tree 'getLeft)) 
-         (error 'left-child "bad tree") 
-         (tree 'getLeft))]
+    [(non-empty tree) (left-child (tree 'getLeft))]
+    ;[(empty-tree? tree) empty-tree]
+    ;[(procedure? tree) (left-child empty-tree)]
+    ;[(empty-tree? (tree 'getValue)) empty-tree]
     [else (error 'left-child "bad tree")]))
-
-(define (value tree)
-  (cond
-    [(number? tree) tree]
-    [(empty-tree? tree) empty-tree]
-    [(non-empty tree) 
-     (if (number? (tree 'getValue)) 
-         (tree 'getValue)
-         (error 'value "bad tree"))]
-    [else (error 'value "bad tree")]))
-
-(define (tree-sum tree)
-  (let ([sum 0])  
-    (local
-      [(define (helper ltree mid rtree acc)
-       (cond
-         [(equal? empty-tree ltree) acc]
-         [(equal? empty-tree rtree) acc]
-         [(equal? empty-tree mid) acc]
-         [else (helper (ltree 'getLeft) mid (rtree 'getRight) (+ acc (ltree 'getValue) (mid 'getValue) (rtree 'getValue)))]))]
-      (helper (tree 'getLeft) tree (tree 'getRight) sum))))
-
-(define (lift fun)
-  (lambda (x)
-    (local
-      [(define (helper fun l m r)
-         (let
-             ([getL (l 'getLeft)]
-              [getR (r 'getRight)])
-         (cond
-           [(equal? empty-tree getL) x]
-           [(equal? empty-tree getR) x]
-           [(equal? empty-tree m) x]
-           [else (helper fun (fun getL) m (fun getR))])))]
-      (helper fun (x 'getLeft) (fun (x 'getValue)) (x 'getRight)))))
 
 (define test-tree-1
   (make-tree (make-leaf 1) 2 (make-leaf 3)))
@@ -102,13 +56,13 @@
 (test/exn (non-empty 42)  "expected non-empty tree")
 (test (left-child (make-leaf 3)) empty-tree)
 (test/exn (left-child (lambda (x) 3))  "bad tree")
-(test/exn (value (lambda (x) empty-tree)) "bad tree")
-(test (value (non-empty (left-child test-tree-1))) 1)
+;(test/exn (value (lambda (x) empty-tree)) "bad tree")
+;(test (value ( non-empty (left-child test-tree-1))) 1)
 
-(test (tree-sum test-tree-1) 6)
+;(test (tree-sum test-tree-1) 6)
 
-(define tree-add1 (lift add1))
-(test (tree-sum (tree-add1 test-tree-1)) 9)
+;(define tree-add1 (lift add1))
+;(test (tree-sum (tree-add1 test-tree-1)) 9)
 
 ;(define tree-neg (lift (lambda (x) (* -1 x))))
 ;(test (tree-sum ((compose tree-neg tree-add1) test-tree-1)) -9)
