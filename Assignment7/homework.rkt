@@ -83,18 +83,19 @@
 
 (define (lift fun)
   (lambda (x)
-           (local
-      [(define (helper fun l m r)
-         (let
-             ([getL ((l 'getLeft) 'getValue)]
-              [getR ((r 'getRight) 'getValue)])
-         (cond
-           [(number? m) (fun m)]
-           [(equal? empty-tree getL) getL]
-           [(equal? empty-tree getR) getR]
-           [(equal? empty-tree m) m]
-           [else (helper fun (l getL) m (r getR))])))]
-      (helper fun (x 'getLeft) (x) (x)))))
+    (let ([getL (x 'getLeft)]
+          [mid (x 'getValue)]
+          [getR (x 'getRight)])
+      (local [(define (helper fun t op)
+                (cond
+                  [(equal? t empty-tree) empty-tree]
+                  [(number? (t 'getValue)) (fun (t 'getValue))]
+                  [else (helper fun (t op) op)]))]
+        (make-tree (make-leaf (helper fun getL 'getLeft)) (fun mid) (make-leaf (helper fun getR 'getRight)))))))
+
+(define (compose funA funB)
+  (begin (display funA) (display funB)
+  (lambda (x) ((lift funA) x))))
 
 (define test-tree-1
   (make-tree (make-leaf 1) 2 (make-leaf 3)))
@@ -102,17 +103,16 @@
 (test/exn (non-empty empty-tree) "expected non-empty tree")
 (test/exn (non-empty 42)  "expected non-empty tree")
 (test (left-child (make-leaf 3)) empty-tree)
-(test/exn (left-child (lambda (x) 3))  "bad tree")
+(test/exn (left-child (lambda (x) 3)) "bad tree")
 (test/exn (value (lambda (x) empty-tree)) "bad tree")
 (test (value (non-empty (left-child test-tree-1))) 1)
-
 (test (tree-sum test-tree-1) 6)
 
 (define tree-add1 (lift add1))
+(define tree-neg (lift (lambda (x) (* -1 x))))
 (test (tree-sum (tree-add1 test-tree-1)) 9)
-
-;(define tree-neg (lift (lambda (x) (* -1 x))))
-;(test (tree-sum ((compose tree-neg tree-add1) test-tree-1)) -9)
-;(test (tree-sum ((compose tree-add1 tree-neg) test-tree-1)) -3)
+(test (tree-sum (tree-neg test-tree-1)) -6)
+(test (tree-sum ((compose tree-neg tree-add1) test-tree-1)) -9)
+(test (tree-sum ((compose tree-add1 tree-neg) test-tree-1)) -3)
 
 (define minutes-spent 180)
