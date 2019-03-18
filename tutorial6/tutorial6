@@ -1,0 +1,55 @@
+#lang racket/gui
+
+(define frame (new frame% [label "I've been Framed"]))
+
+(define msg (new message% [parent frame] [label ""]))
+
+;;anything with a % at the end is a class in this language
+;;(define button (new button% [parent frame] ....)
+(new button% [parent frame]
+     [label "Panic"]
+     [callback
+      (begin
+        (send msg set-label "Don't Panic")
+        (lambda (button event) (panic)))])
+;(send frame show #f))])
+        ;(send msg set-label "Don't Panic"))])
+
+
+;(define my-canvas%
+;  (class canvas%
+;    (super-new)))
+
+(define my-canvas%
+  (class canvas%
+    (super-new)
+    (define/override (on-event event)
+      (when (send event button-down? 'any)
+        (panic)))))
+
+(define canvas (new my-canvas% [parent frame]))
+
+
+(define px 0)
+(define py 0)
+
+;; dc<%> is an interface
+(define (panic)
+  (let ([dc (send canvas get-dc)])
+    (send dc set-scale 5 5)
+    (send dc set-text-foreground "blue")
+    (set! px (+ px 10))
+    (set! py (+ py 10))
+    (send dc draw-text "Don't Panic!" px py)
+    (send dc set-scale 1 1)))
+
+
+(define (ellipse a b)
+  (let ([dc (send canvas get-dc)])
+    (begin
+      (send dc set-pen "blue" 20 'solid)
+      (send dc draw-ellipse a b))))
+
+
+;; macro or syntax, not a function
+(send frame show #t)
