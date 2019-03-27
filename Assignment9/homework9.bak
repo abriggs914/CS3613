@@ -17,9 +17,7 @@
        (body : FAE)]
   [Call (fun-expr : FAE)
        (arg-expr : FAE)]
-  [Lst (id : (Listof FAE))]
-  [Map (fun : FAE) (arg : FAE)]
-  )
+  [Lst (id : (Listof FAE))])
 
 (define-type TE
   [NumTE]
@@ -35,8 +33,7 @@
   [ClosureV (param : Symbol)
             (body : FAE)
             (env : Env)]
-  [ListV (lst : (Listof FAE-Value))]
-  )
+  [ListV (lst : (Listof FAE))])
 
 (define-type Env
   [mtSub]
@@ -49,8 +46,7 @@
   [BoolT]
   [ArrowT (arg : Type)
           (result : Type)]
-  [ListT (lst : Type)]
-  )
+  [ListT (lst : Type)])
 
 (define-type TypeEnv
   [mtEnv]
@@ -59,28 +55,6 @@
          (rest : TypeEnv)])
 
 ;; ----------------------------------------
-
-#|
-ClosureV
-- (Symbol FAE Env -> FAE-Value)
-#<procedure:ClosureV>
-
-> ClosureV-param
-- (FAE-Value -> Symbol)
-#<procedure:ClosureV-param>
-
-> ClosureV-body
-- (FAE-Value -> FAE)
-#<procedure:ClosureV-body>
-
-> ClosureV-env
-- (FAE-Value -> Env)
-#<procedure:ClosureV-env>
-
-> aSub
-- (Symbol FAE-Value Env -> Env)
-#<procedure:aSub>
-|#
 
 ;; eval : FAE Env -> FAE-Value
 (define (eval a-fae env)
@@ -102,31 +76,7 @@ ClosureV
                    (aSub (ClosureV-param fun-val)
                          arg-val
                          (ClosureV-env fun-val))))]
-    [(Lst id) (ListV (map (lambda (x) (eval x env)) id))]
-    ;2[(Lst id) (local
-    ;2            [(define (helper lst acc)
-    ;2               (cond
-    ;2                 [(empty? lst) acc]
-    ;2                 [else (helper (rest lst) (num+ acc (eval (first lst) env)))]))]
-    ;2            (helper id (NumV 0)))]
-   ;1[(Lst id) (if (empty? id) (error 'eval "not elements to infer type from")
-   ;1                (ClosureV (ClosureV-param (eval (first id) env)) (first id) env))]
-
-    ;1[(Map fun arg) (local [(define fun-val
-    ;1               (eval fun env))
-    ;1             (define arg-val
-    ;1               (eval arg env))]
-    ;1       (eval (ClosureV-body fun-val)
-    ;1               (aSub (ClosureV-param fun-val)
-    ;1                     arg-val
-    ;1                     (ClosureV-env fun-val))))]
-    [(Map fun arg) (ListV
-                    (map (lambda (x)
-                           (eval (ClosureV-body (eval fun env))
-                         (aSub (ClosureV-param (eval fun env))
-                               (eval x env)
-                               (ClosureV-env (eval fun env))))) (list arg)))]
-    ))
+    [(Lst id) (ListV id)]))
 
 ;; num-op : (Number Number -> Number) -> (FAE-Value FAE-Value -> FAE-Value)
 (define (num-op op op-name x y)
@@ -208,30 +158,12 @@ ClosureV
        [(ArrowT arg-type result-type)
         (type-assert (list arg) arg-type env result-type)]
        [else (type-error fn "function")])]
-    [(Lst id)
-     (cond
-       [(empty? id) (error 'typecheck "not elements to infer type from")]
-       [else 
-     (let ([currType (typecheck (first id) env)]
-       [res (map (lambda (x) (typecheck x env)) id)])     
-       (if (foldl
-        (lambda (x y)
-           (if (equal? x currType)
-               (and y #t)
-               (and y #f))) #t res)
-           (ListT currType)
-           (error 'typecheck "not uniform element types")))])]
-    [(Map fun arg)
-     (type-case Type (typecheck fun env)
-       [(ArrowT arg-type result-type)
-        (type-assert (list arg) arg-type env result-type)]
-       [else (type-error fun "function")])]))
-    ;))(list (map (lambda (x) (type-assert id x env x)) id))]))
+    [(Lst id) (list (map (lambda (x) (type-assert id x env x)) id))]))
 
 ;; ----------------------------------------
 
 (module+ test
-  ;(print-only-errors #t)
+  (print-only-errors #t)
   (test/exn (eval (Id 'x) (mtSub)) "free variable")
 
   (test/exn (typecheck (Id 'x) (mtEnv))  "free variable")
@@ -329,7 +261,7 @@ ClosureV
   ;; Added coverage test for type-to-string
   (test/exn (typecheck (Call (Fun 'f (ArrowTE (NumTE) (NumTE))
                                   (Call (Id 'f) (Num 1))) (Num 1)) (mtEnv))
-            "not (ArrowT (NumT) (NumT))")
+            "not (ArrowT (NumT) (NumT))"))
 
 
 (test (typecheck (Lst (list (Num 1) (Num 2))) (mtEnv)) 
@@ -341,14 +273,11 @@ ClosureV
 (test/exn (typecheck (Lst empty) (mtEnv))
           "not elements to infer type from")
 
-
+#|
 (test (typecheck
        (Map (Fun 'x (NumTE) (Id 'x)) (Lst (list (Num 1) (Num 2)))) (mtEnv))
       (ListT (NumT)))
 (test (eval
-       (Map (Fun 'x (NumTE) (Id 'x)) (Lst (list (Num 1) (Num 2)))) (mtSub))
+       (Map (Fun 'x (NumTE) (id 'x)) (Lst (list (Num 1) (Num 2)))) (mtSub))
       (ListV (list (NumV 1) (NumV 2))))
-
-  )
-
-(define minutes-spent 60)
+|#
