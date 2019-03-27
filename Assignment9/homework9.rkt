@@ -112,20 +112,20 @@ ClosureV
    ;1[(Lst id) (if (empty? id) (error 'eval "not elements to infer type from")
    ;1                (ClosureV (ClosureV-param (eval (first id) env)) (first id) env))]
 
-    ;1[(Map fun arg) (local [(define fun-val
-    ;1               (eval fun env))
-    ;1             (define arg-val
-    ;1               (eval arg env))]
-    ;1       (eval (ClosureV-body fun-val)
-    ;1               (aSub (ClosureV-param fun-val)
-    ;1                     arg-val
-    ;1                     (ClosureV-env fun-val))))]
-    [(Map fun arg) (ListV
-                    (map (lambda (x)
-                           (eval (ClosureV-body (eval fun env))
-                         (aSub (ClosureV-param (eval fun env))
-                               (eval x env)
-                               (ClosureV-env (eval fun env))))) (list arg)))]
+    [(Map fun arg) (local [(define fun-val
+                             (eval fun env))
+                           (define arg-val
+                             (eval arg env))]
+                     (eval (ClosureV-body fun-val)
+                           (aSub (ClosureV-param fun-val)
+                                 arg-val
+                                 (ClosureV-env fun-val))))]
+    ;2[(Map fun arg) (ListV
+    ;2                (map (lambda (x)
+    ;2                       (eval (ClosureV-body (eval fun env))
+    ;2                     (aSub (ClosureV-param (eval fun env))
+    ;2                           (eval x env)
+    ;2                           (ClosureV-env (eval fun env))))) (list arg)))]
     ))
 
 ;; num-op : (Number Number -> Number) -> (FAE-Value FAE-Value -> FAE-Value)
@@ -222,12 +222,22 @@ ClosureV
            (ListT currType)
            (error 'typecheck "not uniform element types")))])]
     [(Map fun arg)
-     (type-case Type (typecheck fun env)
+     (let ([currType (typecheck fun env)])
+     (type-case Type currType
+       [(ListT lst) (first (map (lambda (x) (type-assert (list fae) (typecheck x env) env currType)) (list lst)))]
        [(ArrowT arg-type result-type)
-        (type-assert (list arg) arg-type env result-type)]
-       [else (type-error fun "function")])]))
+        (type-assert (list arg) currType env result-type)]
+       [else (error 'help "error here\n\n")]))]
+        ;(first (map (lambda (x)
+        ;       (let ([x (typecheck x env)])
+        ;         (type-assert (list arg) x env x))) (list arg)))]))]
+    ;1[(Map fun arg)
+    ;1 (type-case Type (typecheck fun env)
+    ;1   [(ArrowT arg-type result-type)
+    ;1    (type-assert (list arg) arg-type env result-type)]
+    ;1   [else (type-error fun "function")])]))
     ;))(list (map (lambda (x) (type-assert id x env x)) id))]))
-
+    ))
 ;; ----------------------------------------
 
 (module+ test
