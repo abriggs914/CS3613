@@ -1,7 +1,11 @@
 #lang plait
 
-;"Take what we go over for pairs and generalize it."
-;"Arbitrary list of items, need to check that they are in pairs"
+#|
+ CS3613 Assignment 9
+ Mar.29/19
+ Avery Briggs
+ 3471065
+|#
 
 (define-type FAE
   [Num (n : Number)]
@@ -16,18 +20,15 @@
        (argty : TE)
        (body : FAE)]
   [Call (fun-expr : FAE)
-       (arg-expr : FAE)]
+        (arg-expr : FAE)]
   [Lst (id : (Listof FAE))]
-  [Map (fun : FAE) (arg : FAE)]
-  )
+  [Map (fun : FAE) (arg : FAE)])
 
 (define-type TE
   [NumTE]
   [BoolTE]
   [ArrowTE (arg : TE)
-           (result : TE)]
-  ;[ListTE (lst : (Listof FAE))]
-  )
+           (result : TE)])
 
 (define-type FAE-Value
   [NumV (n : Number)]
@@ -35,8 +36,7 @@
   [ClosureV (param : Symbol)
             (body : FAE)
             (env : Env)]
-  [ListV (lst : (Listof FAE-Value))]
-  )
+  [ListV (lst : (Listof FAE-Value))])
 
 (define-type Env
   [mtSub]
@@ -49,8 +49,7 @@
   [BoolT]
   [ArrowT (arg : Type)
           (result : Type)]
-  [ListT (lst : Type)]
-  )
+  [ListT (lst : Type)])
 
 (define-type TypeEnv
   [mtEnv]
@@ -59,28 +58,6 @@
          (rest : TypeEnv)])
 
 ;; ----------------------------------------
-
-#|
-ClosureV
-- (Symbol FAE Env -> FAE-Value)
-#<procedure:ClosureV>
-
-> ClosureV-param
-- (FAE-Value -> Symbol)
-#<procedure:ClosureV-param>
-
-> ClosureV-body
-- (FAE-Value -> FAE)
-#<procedure:ClosureV-body>
-
-> ClosureV-env
-- (FAE-Value -> Env)
-#<procedure:ClosureV-env>
-
-> aSub
-- (Symbol FAE-Value Env -> Env)
-#<procedure:aSub>
-|#
 
 ;; eval : FAE Env -> FAE-Value
 (define (eval a-fae env)
@@ -92,41 +69,23 @@ ClosureV
     [(Sub l r) (num- (eval l env) (eval r env))]
     [(Id name) (lookup name env)]
     [(Fun param arg-te body-expr)
-         (ClosureV param body-expr env)]
+     (ClosureV param body-expr env)]
     [(Call fun-expr arg-expr)
-         (local [(define fun-val
-                   (eval fun-expr env))
-                 (define arg-val
-                   (eval arg-expr env))]
-           (eval (ClosureV-body fun-val)
-                   (aSub (ClosureV-param fun-val)
-                         arg-val
-                         (ClosureV-env fun-val))))]
+     (local [(define fun-val
+               (eval fun-expr env))
+             (define arg-val
+               (eval arg-expr env))]
+       (eval (ClosureV-body fun-val)
+             (aSub (ClosureV-param fun-val)
+                   arg-val
+                   (ClosureV-env fun-val))))]
     [(Lst id) (ListV (map (lambda (x) (eval x env)) id))]
-    ;2[(Lst id) (local
-    ;2            [(define (helper lst acc)
-    ;2               (cond
-    ;2                 [(empty? lst) acc]
-    ;2                 [else (helper (rest lst) (num+ acc (eval (first lst) env)))]))]
-    ;2            (helper id (NumV 0)))]
-   ;1[(Lst id) (if (empty? id) (error 'eval "not elements to infer type from")
-   ;1                (ClosureV (ClosureV-param (eval (first id) env)) (first id) env))]
-
-    [(Map fun arg) (local [(define fun-val
-                             (eval fun env))
-                           (define arg-val
-                             (eval arg env))]
-                     (eval (ClosureV-body fun-val)
-                           (aSub (ClosureV-param fun-val)
-                                 arg-val
-                                 (ClosureV-env fun-val))))]
-    ;2[(Map fun arg) (ListV
-    ;2                (map (lambda (x)
-    ;2                       (eval (ClosureV-body (eval fun env))
-    ;2                     (aSub (ClosureV-param (eval fun env))
-    ;2                           (eval x env)
-    ;2                           (ClosureV-env (eval fun env))))) (list arg)))]
-    ))
+    [(Map fun arg)
+     (let
+         ([lst (type-case FAE arg
+                 [(Lst id) id]
+                 [else (error 'eval "not given a list")])])
+       (ListV (map (lambda (x) (eval (Call fun x) env)) lst)))]))
 
 ;; num-op : (Number Number -> Number) -> (FAE-Value FAE-Value -> FAE-Value)
 (define (num-op op op-name x y)
@@ -143,9 +102,9 @@ ClosureV
   (type-case Env env
     [(mtSub) (error 'lookup "free variable")]
     [(aSub Sub-name num rest-env)
-          (if (equal? Sub-name name)
-              num
-              (lookup name rest-env))]))
+     (if (equal? Sub-name name)
+         num
+         (lookup name rest-env))]))
 
 ;; ----------------------------------------
 
@@ -154,9 +113,9 @@ ClosureV
   (type-case TypeEnv env
     [(mtEnv) (error 'type-lookup "free variable, so no type")]
     [(aBind name ty rest)
-           (if (equal? name-to-find name)
-               ty
-               (type-lookup name-to-find rest))]))
+     (if (equal? name-to-find name)
+         ty
+         (type-lookup name-to-find rest))]))
 
 ;; ----------------------------------------
 ;; (TE -> Type)
@@ -212,110 +171,102 @@ ClosureV
      (cond
        [(empty? id) (error 'typecheck "not elements to infer type from")]
        [else 
-     (let ([currType (typecheck (first id) env)]
-       [res (map (lambda (x) (typecheck x env)) id)])     
-       (if (foldl
-        (lambda (x y)
-           (if (equal? x currType)
-               (and y #t)
-               (and y #f))) #t res)
-           (ListT currType)
-           (error 'typecheck "not uniform element types")))])]
-    [(Map fun arg)
-     (let ([currType (typecheck fun env)])
-     (type-case Type currType
-       [(ListT lst) (first (map (lambda (x) (type-assert (list fae) (typecheck x env) env currType)) (list lst)))]
-       [(ArrowT arg-type result-type)
-        (type-assert (list arg) currType env result-type)]
-       [else (error 'help "error here\n\n")]))]
-        ;(first (map (lambda (x)
-        ;       (let ([x (typecheck x env)])
-        ;         (type-assert (list arg) x env x))) (list arg)))]))]
-    ;1[(Map fun arg)
-    ;1 (type-case Type (typecheck fun env)
-    ;1   [(ArrowT arg-type result-type)
-    ;1    (type-assert (list arg) arg-type env result-type)]
-    ;1   [else (type-error fun "function")])]))
-    ;))(list (map (lambda (x) (type-assert id x env x)) id))]))
-    ))
+        (let ([currType (typecheck (first id) env)]
+              [res (map (lambda (x) (typecheck x env)) id)])     
+          (if (foldl
+               (lambda (x y)
+                 (if (equal? x currType)
+                     (and y #t)
+                     (and y #f))) #t res)
+              (ListT currType)
+              (error 'typecheck "not uniform element types")))])]
+    [(Map fun arg) (let*
+                       ([lst (typecheck arg env)]
+                        [f (typecheck fun env)]
+                        [fCheck (ListT (type-case Type f
+                                          [(ArrowT arg res) arg]
+                                          [else (error 'typecheck
+                                                       "function type does not match list type")]))])
+                       (if (equal? lst fCheck) lst (error 'typecheck
+                                                       "function type does not match list type")))]))
 ;; ----------------------------------------
 
 (module+ test
   ;(print-only-errors #t)
   (test/exn (eval (Id 'x) (mtSub)) "free variable")
-
+  
   (test/exn (typecheck (Id 'x) (mtEnv))  "free variable")
-
+  
   (test (eval (Not (Bool #f)) (mtSub))
         (BoolV #t))
-
+  
   (test/exn (typecheck (Not (Num 1)) (mtEnv)) "not bool")
   
   (test (typecheck (Not (Bool #f)) (mtEnv))
         (BoolT))
   
   (test (eval (Num 10)
-                (mtSub))
+              (mtSub))
         (NumV 10))
   (test (eval (Add (Num 10) (Num 17))
-                (mtSub))
+              (mtSub))
         (NumV 27))
   (test (eval (Sub (Num 10) (Num 7))
-                (mtSub))
+              (mtSub))
         (NumV 3))
   (test (eval (Call (Fun 'x (NumTE) (Add (Id 'x) (Num 12)))
-                      (Add (Num 1) (Num 17)))
-                (mtSub))
+                    (Add (Num 1) (Num 17)))
+              (mtSub))
         (NumV 30))
   (test (eval (Id 'x)
-                (aSub 'x (NumV 10) (mtSub)))
+              (aSub 'x (NumV 10) (mtSub)))
         (NumV 10))
-
+  
   (test (eval (Call (Fun 'x (NumTE)
-                           (Call (Fun 'f (ArrowTE (NumTE) (NumTE))
-                                      (Add (Call (Id 'f) (Num 1))
-                                           (Call (Fun 'x (NumTE)
-                                                      (Call (Id 'f)
-                                                            (Num 2)))
-                                                 (Num 3))))
-                                 (Fun 'y (NumTE)
-                                      (Add (Id 'x) (Id 'y)))))
-                      (Num 0))
-                (mtSub))
+                         (Call (Fun 'f (ArrowTE (NumTE) (NumTE))
+                                    (Add (Call (Id 'f) (Num 1))
+                                         (Call (Fun 'x (NumTE)
+                                                    (Call (Id 'f)
+                                                          (Num 2)))
+                                               (Num 3))))
+                               (Fun 'y (NumTE)
+                                    (Add (Id 'x) (Id 'y)))))
+                    (Num 0))
+              (mtSub))
         (NumV 3))
-
+  
   (test/exn (eval (Id 'x) (mtSub))
             "free variable")
-
+  
   (test (typecheck (Num 10) (mtEnv))
         (NumT))
-
+  
   (test (typecheck (Add (Num 10) (Num 17)) (mtEnv))
         (NumT))
   (test (typecheck (Sub (Num 10) (Num 7)) (mtEnv))
         (NumT))
-
+  
   (test/exn (typecheck (Add (Bool #f) (Num 17)) (mtEnv)) "not num")
   (test/exn (typecheck (Sub (Bool #f) (Num 17)) (mtEnv)) "not num")
   (test/exn (typecheck (Add (Num 17) (Bool #f)) (mtEnv)) "not num")
   (test/exn (typecheck (Sub (Num 17) (Bool #f)) (mtEnv)) "not num")
-
+  
   (test (typecheck (Fun 'x (NumTE) (Add (Id 'x) (Num 12))) (mtEnv))
         (ArrowT (NumT) (NumT)))
-
+  
   (test/exn (typecheck (Call (Fun 'x (NumTE) (Id 'x)) (Bool #t)) (mtEnv)) "no type")
-
+  
   (test (typecheck (Fun 'x (NumTE) (Fun 'y (BoolTE) (Id 'x))) (mtEnv))
         (ArrowT (NumT) (ArrowT (BoolT)  (NumT))))
-
+  
   (test (typecheck (Call (Fun 'x (NumTE) (Add (Id 'x) (Num 12)))
                          (Add (Num 1) (Num 17)))
                    (mtEnv))
         (NumT))
-
+  
   (test (typecheck (Fun 'x (NumTE) (Fun 'y (BoolTE) (Id 'x))) (mtEnv))
         (ArrowT (NumT) (ArrowT (BoolT)  (NumT))))
-
+  
   (test (typecheck (Call (Fun 'x (NumTE)
                               (Call (Fun 'f (ArrowTE (NumTE) (NumTE))
                                          (Add (Call (Id 'f) (Num 1))
@@ -327,7 +278,7 @@ ClosureV
                          (Num 0))
                    (mtEnv))
         (NumT))
-
+  
   (test/exn (typecheck (Call (Num 1) (Num 2)) (mtEnv))
             "no type")
 
@@ -335,30 +286,61 @@ ClosureV
                             (Num 2))
                        (mtEnv))
             "no type")
-
+  
   ;; Added coverage test for type-to-string
   (test/exn (typecheck (Call (Fun 'f (ArrowTE (NumTE) (NumTE))
                                   (Call (Id 'f) (Num 1))) (Num 1)) (mtEnv))
             "not (ArrowT (NumT) (NumT))")
+  
+  
+  (test (typecheck (Lst (list (Num 1) (Num 2))) (mtEnv)) 
+        (ListT (NumT)))
+  (test (eval (Lst (list (Num 1) (Num 2))) (mtSub))
+        (ListV (list (NumV 1) (NumV 2))))
+  (test/exn (typecheck (Lst (list (Num 1) (Bool #t))) (mtEnv))
+            "not uniform element types")
+  (test/exn (typecheck (Lst empty) (mtEnv))
+            "not elements to infer type from")
+  
+  
+  (test (typecheck
+         (Map (Fun 'x (NumTE) (Id 'x)) (Lst (list (Num 1) (Num 2)))) (mtEnv))
+        (ListT (NumT)))
+  (test (eval
+         (Map (Fun 'x (NumTE) (Id 'x)) (Lst (list (Num 1) (Num 2)))) (mtSub))
+        (ListV (list (NumV 1) (NumV 2))))
 
+  (test (eval (Map (Fun 'x (NumTE) (Add (Num 10) (Id 'x))) (Lst (list (Num 1) (Num 2)))) (mtSub))
+        (ListV (list (NumV 11) (NumV 12))))
 
-(test (typecheck (Lst (list (Num 1) (Num 2))) (mtEnv)) 
-      (ListT (NumT)))
-(test (eval (Lst (list (Num 1) (Num 2))) (mtSub))
-      (ListV (list (NumV 1) (NumV 2))))
-(test/exn (typecheck (Lst (list (Num 1) (Bool #t))) (mtEnv))
-          "not uniform element types")
-(test/exn (typecheck (Lst empty) (mtEnv))
-          "not elements to infer type from")
+  (test/exn (eval (Map (Fun 'x (NumTE) (Add (Num 5) (Id 'x))) (Num 10)) (mtSub))
+            "not given a list")
+  
+  (test (typecheck (Map (Fun 'x (NumTE) (Add (Num 10) (Id 'x))) (Lst (list (Num 1) (Num 2)))) (mtEnv))
+        (ListT (NumT)))
+  
+  (test/exn (typecheck (Map (Fun 'x (NumTE) (Add (Num 5) (Id 'x)))
+                       (Lst (list (Bool #t) (Bool #t)))) (mtEnv))
+        "typecheck: function type does not match list type")
 
+  (test/exn (typecheck (Map (Fun 'x (NumTE) (Add (Bool #t) (Id 'x)))
+                       (Lst (list (Bool #t) (Bool #t)))) (mtEnv))
+        "typecheck: no type: (Bool #t) not num")
+  
+  (test/exn (typecheck (Map (Add (Num 5) (Num 10))
+                       (Lst (list (Bool #t) (Bool #t)))) (mtEnv))
+        "typecheck: function type does not match list type")
 
-(test (typecheck
-       (Map (Fun 'x (NumTE) (Id 'x)) (Lst (list (Num 1) (Num 2)))) (mtEnv))
-      (ListT (NumT)))
-(test (eval
-       (Map (Fun 'x (NumTE) (Id 'x)) (Lst (list (Num 1) (Num 2)))) (mtSub))
-      (ListV (list (NumV 1) (NumV 2))))
+  (test (typecheck (Map (Fun 'x (BoolTE) (Id 'x))
+                       (Lst (list (Bool #t) (Bool #f)))) (mtEnv))
+        (ListT (BoolT)))
 
-  )
+  (test (eval (Map (Fun 'x (BoolTE) (Id 'x))
+                       (Lst (list (Bool #t) (Bool #f)))) (mtSub))
+        (ListV (list (BoolV #t) (BoolV #f))))
+  
+  (test/exn (typecheck (Map (Fun 'x (BoolTE) (Id 'x))
+                       (Lst (list (Num 0) (Num 5)))) (mtEnv))
+        "typecheck: function type does not match list type"))
 
-(define minutes-spent 60)
+(define minutes-spent 240)
