@@ -1,0 +1,10 @@
+#lang plait
+(define-syntax-rule (set x ...)  
+  (list->set (list x ...)))
+
+(define-type-alias (Setof 'a) (Hashof 'a Boolean))
+
+(define (list->set [ items : (Listof 'a) ]) : (Setof 'a)
+  (hash (map (lambda (item) (pair item #t)) items)))
+
+(define a (set 1 2 3))
